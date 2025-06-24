@@ -74,6 +74,10 @@
     ],
     "C_Cpp.default.forcedInclude": [
         "${workspaceFolder}/build/project_defines.h"
-    ]
+    ],
+    "files.associations": {
+        "spi.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": true
 }
 

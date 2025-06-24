@@ -119,8 +119,8 @@ int main(void)
     spi_pins.mosi = TRUE;
     spi_pins.sdio2 = FALSE;
     spi_pins.sdio3 = FALSE;
-    spi_pins.ss0 = TRUE;
-    spi_pins.ss1 = FALSE;
+    spi_pins.ss0 = FALSE;
+    spi_pins.ss1 = TRUE;
     spi_pins.ss2 = FALSE;
 
 #if MASTERSYNC
@@ -134,7 +134,7 @@ int main(void)
     printf("Performing transactions with DMA...\n");
 #endif
 
-    for (i = 2; i < 17; i++) {
+    for (i = 16; i < 17; i++) {
         // Sending out 2 to 16 bits
 
         // The hardware doesn't support 9-bit wide characters at high speeds.
@@ -162,7 +162,7 @@ int main(void)
         req.rxData = (uint8_t *)rx_data;
         req.txLen = DATA_LEN;
         req.rxLen = DATA_LEN;
-        req.ssIdx = 0;
+        req.ssIdx = 1;
         req.ssDeassert = 1;
         req.txCnt = 0;
         req.rxCnt = 0;

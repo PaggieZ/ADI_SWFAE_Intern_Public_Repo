@@ -1,0 +1,33 @@
+C:/workspace/ADI_Intern_Private/readTempSensor/readTemp_New/build/max20303.o: \
+ C:/workspace/msdk/Libraries/MiscDrivers/PMIC/max20303.c \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\_default_types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\features.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\_newlib_version.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_intsup.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stddef.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_device.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/max78000.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/core_cm4.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_version.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_compiler.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_gcc.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/mpu_armv7.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/system_max78000.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/gcr_regs.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_errors.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_pins.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/gpio.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/gpio_regs.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_delay.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/i2c.h \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdbool.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_sys.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX78000/mxc_device.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/lpgcr_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/gcr_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/i2c_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX78000/Include/dma_regs.h \
+ C:/workspace/msdk/Libraries/MiscDrivers/PMIC/max20303.h

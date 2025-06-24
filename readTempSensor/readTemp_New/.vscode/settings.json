@@ -74,6 +74,11 @@
     ],
     "C_Cpp.default.forcedInclude": [
         "${workspaceFolder}/build/project_defines.h"
-    ]
+    ],
+    "files.associations": {
+        "spi.h": "c",
+        "uart.h": "c",
+        "string.h": "c"
+    }
 }
 
