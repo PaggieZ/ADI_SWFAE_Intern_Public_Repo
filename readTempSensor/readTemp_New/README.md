@@ -78,7 +78,55 @@ MAX78000FTHR (FTHR_RevA):
   - Output data is little endian
 
 ## Milestones
-- **Single Temperature Reading** (6/24/2025)
+### **Temperature Readings Triggered by Interrupts** (6/27/2025)
+  - fixed the unstable reading issue
+    - The VDDIO of the MISO pin was 1.8V while all other pins are at 3.3V
+  - SW2 triggers a temperature reading through ISR. SW2 also toggles LED1
+  - expected output (The last few "Final Temperature" lines are triggered by SW2):
+    ```
+    *********************** SPI TEMPERATURE READ TEST ********************
+    This example configures SPI to get a single temperture reading from
+    MAX31723 to MAX78000 when an interrupt is triggered by pressing SW2.
+    The interrupt also turns on LED1.
+
+    Board: MAX78000FTHR
+    Performing blocking (synchronous) transactions...
+    SPI Initialization SUCCESS
+    SPI Mode Initialization SUCCESS
+
+    Reading Configuration Register...
+    Configuration Register: 0100 0110
+
+    Writing Configuration Register...
+    Configuration Register Value Sent: 0100 0110
+
+    Reading Configuration Register...
+    Configuration Register: 0110 0110
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 1000
+    Temperature MSB: 24 
+
+    Reading Temperature LSB...
+    Temperature LSB: 1001 0000
+    Temperature LSB: 144 
+    Temp_Fraction: 0.562500
+
+    Final Temperature: 24.562500
+
+    Final Temperature: 24.812500
+
+    Final Temperature: 25.312500
+
+    Final Temperature: 25.500000
+
+    Final Temperature: 25.625000
+
+    Final Temperature: 25.687500
+
+    Final Temperature: 25.812500
+    ```
+### **Single Temperature Reading** (6/24/2025)
   - read from and write to any registers on the temperature sensor
   - expected output:
       ```
@@ -119,17 +167,24 @@ MAX78000FTHR (FTHR_RevA):
   - 0 = E_NO_ERROR, implies initialization success
 
 ## Interesting Topics
-- **SPI**
-  - Half Duplex and Full Duplex
-  - Adding more sublines to send multiple bits at a time
-  - Clock phase and clock polarity
+### SPI
+- Half Duplex and Full Duplex
+- Adding more sublines to send multiple bits at a time
+- Clock phase and clock polarity
+- Synchronous vs. Asynchronous
+
+## Takeaways
+* Always make sure the VDDIO on all GPIOs are matched when driving a component
 
 ## Next Step
+- **6/27/2025**
+  - Explore the Asynchronous peripheral API (USE_ASYNC)
+  - Modify the code to perform non-blocking transaction
 - **6/24/2025**
-  - learn how to use the push buttons by reading MAX78000FTHR datasheet and the GPIO example code
-  - implement the interrupt such that when a button is pushed, a temperature reading is displayed on the serial monitor
-  - perform continuous reading until keyboard interrupt
-  - resample when the return value is invalid (0xFF)
+  - :white_check_mark:learn how to use the push buttons by reading MAX78000FTHR datasheet and the GPIO example code
+  - :white_check_mark:implement the interrupt such that when a button is pushed, a temperature reading is displayed on the serial monitor
+  - :arrow_down:perform continuous reading until keyboard interrupt
+  - :arrow_down:resample when the return value is invalid (0xFF)
 - **6/18/2025**
   - :white_check_mark: find MXC_SPI_MasterTransaction() definition (line 188 in main.c)
   - :white_check_mark: understand the receiving process (after line 213 in main.c)

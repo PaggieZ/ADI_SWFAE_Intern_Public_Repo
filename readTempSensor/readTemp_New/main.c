@@ -20,6 +20,9 @@
 #include "nvic_table.h"
 #include "spi.h"
 #include "uart.h"
+#include "pb.h"
+#include "gpio.h"
+
 
 /***** Preprocessors *****/
 #define MASTERSYNC 1
@@ -40,11 +43,20 @@
 // resolution for the temperature reading (9 - 12 bits)
 #define TEMP_RES 12 
 
+// (P1.7, SW2)
+#define IN_INTERRUPT_PORT MXC_GPIO1 
+#define IN_INTERRUPT_PIN MXC_GPIO_PIN_7
+// (P2.0, LED1)
+#define OUT_INTERRUPT_PORT MXC_GPIO2
+#define OUT_INTERRUPT_PIN MXC_GPIO_PIN_0
+
+
 /***** Globals *****/
 uint8_t rx_data[DATA_LEN];
 uint8_t tx_data[DATA_LEN];
 volatile int SPI_FLAG;
 volatile uint8_t DMA_FLAG = 0;
+mxc_spi_req_t req;
 
 uint8_t temp_MSB; // most significant byte of temperature reading
 uint8_t temp_LSB; // least significant byte of temperature reading
@@ -71,14 +83,42 @@ void SPI_Callback(mxc_spi_req_t *req, int error)
     SPI_FLAG = error;
 }
 
+void gpio_isr(void *cbdata)
+{
+    mxc_gpio_cfg_t *cfg = cbdata;
+    MXC_GPIO_OutToggle(cfg->port, cfg->mask);
+
+    // read temp MSB register
+    tx_data[0] = 0x02;
+    tx_data[1] = 0x00;
+    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
+    MXC_SPI_MasterTransaction(&req);
+    temp_MSB = rx_data[1];
+    
+
+    // read temp LSB register
+    tx_data[0] = 0x01;
+    tx_data[1] = 0x00;
+    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
+    MXC_SPI_MasterTransaction(&req);
+    temp_LSB = rx_data[1];
+
+    double temp_final = temp_MSB + temp_LSB/((float)256.0);
+    printf("\nFinal Temperature: %.4f\n", temp_final);
+}
+
 int main(void)
 {
     int retVal;
-    mxc_spi_req_t req;
     mxc_spi_pins_t spi_pins;
 
+    mxc_gpio_cfg_t gpio_interrupt;
+    mxc_gpio_cfg_t gpio_interrupt_status;
+
     printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n");
-    printf("This example configures SPI to get a single temperture reading from\nMAX31723 to MAX78000.\n");
+    printf("This example configures SPI to get a single temperture reading from\n");
+    printf("MAX31723 to MAX78000 when an interrupt is triggered by pressing SW2.\n");
+    printf("The interrupt also turns on LED1.\n");
 
     spi_pins.clock = TRUE;
     spi_pins.miso = TRUE;
@@ -88,6 +128,7 @@ int main(void)
     spi_pins.ss0 = FALSE; // slave select pin 0
     spi_pins.ss1 = TRUE; // P0.11
     spi_pins.ss2 = FALSE;
+    spi_pins.vddioh = MXC_GPIO_VSSEL_VDDIOH;
 
 #ifdef BOARD_EVKIT_V1
     printf("\nBoard: BOARD_EVKIT_V1\n");
@@ -108,8 +149,34 @@ int main(void)
     tx_data[0] = 0x00; // configuration register address
     tx_data[1] = 0x00; // dummy byte
     
+    /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
+    gpio_interrupt_status.port = OUT_INTERRUPT_PORT;
+    gpio_interrupt_status.mask = OUT_INTERRUPT_PIN;
+    gpio_interrupt_status.pad = MXC_GPIO_PAD_NONE;
+    gpio_interrupt_status.func = MXC_GPIO_FUNC_OUT;
+    gpio_interrupt_status.vssel = MXC_GPIO_VSSEL_VDDIO;
+    gpio_interrupt_status.drvstr = MXC_GPIO_DRVSTR_0;
+    MXC_GPIO_Config(&gpio_interrupt_status);
+
+    /*
+     *   Set up interrupt pin.
+     *   Switch on EV kit is open when non-pressed, and grounded when pressed.  Use an internal pull-up so pin
+     *     reads high when button is not pressed.
+     */
+    gpio_interrupt.port = IN_INTERRUPT_PORT;
+    gpio_interrupt.mask = IN_INTERRUPT_PIN;
+    gpio_interrupt.pad = MXC_GPIO_PAD_PULL_UP;
+    gpio_interrupt.func = MXC_GPIO_FUNC_IN;
+    gpio_interrupt.vssel = MXC_GPIO_VSSEL_VDDIOH;
+    gpio_interrupt.drvstr = MXC_GPIO_DRVSTR_0;
+    MXC_GPIO_Config(&gpio_interrupt);
+    MXC_GPIO_RegisterCallback(&gpio_interrupt, gpio_isr, &gpio_interrupt_status);
+    MXC_GPIO_IntConfig(&gpio_interrupt, MXC_GPIO_INT_FALLING);
+    MXC_GPIO_EnableInt(gpio_interrupt.port, gpio_interrupt.mask);
+    NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
+
+
     // Configure the peripheral
-    
     // initialize the SPI port
     // master mode
     // not quad mode
@@ -122,6 +189,7 @@ int main(void)
     }
 
     printf("SPI Initialization SUCCESS\n");
+
 
     // configure SPI mode
     // for SPI_MODE_3, CPHA = CPOL = 1
@@ -237,20 +305,13 @@ int main(void)
     }
     printf("\nTemperature LSB: %d ", rx_data[1]);
     temp_LSB = rx_data[1];
-    printf("\nTemp_Fraction: %.6f\n", temp_LSB/256.0);
+    printf("\nTemp_Fraction: %.4f\n", (double)(temp_LSB/256.0f));
     
 
     double temp_final = temp_MSB + temp_LSB/((float)256.0);
-    printf("\nFinal Temperature: %.6f\n", temp_final);
+    printf("\nFinal Temperature: %.4f\n", temp_final);
 
-    retVal = MXC_SPI_Shutdown(SPI);
+    while(1){ // listen to interrupts}
 
-    if (retVal != E_NO_ERROR) {
-        printf("\n-->SPI SHUTDOWN ERROR: %d\n", retVal);
-        return retVal;
-    }
-    
-
-    printf("\nExample Complete.\n");
-    return E_NO_ERROR;
+    return 0;
 }
