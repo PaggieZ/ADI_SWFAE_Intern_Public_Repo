@@ -1,7 +1,7 @@
 set log_output to "flash.log"
 Info : J-Link Pro V5-1 compiled Apr  1 2025 10:04:08
 Info : Hardware version: 5.10
-Info : VTarget = 1.774 V
+Info : VTarget = 1.779 V
 Info : clock speed 2000 kHz
 Info : SWD DPIDR 0x2ba01477
 Info : [max32xxx.cpu] Cortex-M4 r0p1 processor detected
