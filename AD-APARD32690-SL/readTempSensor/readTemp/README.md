@@ -27,7 +27,7 @@ AD-APARD32690-SL (APARD):
 
 ## Useful Links
 * **MAX32690 datasheet:** https://www.analog.com/media/en/technical-documentation/data-sheets/max32690.pdf
-  - alternate function for setting up SPI4
+  - alternate function for setting up SPI4 pins
 
 * **MAX31723PMB1 datasheet:** https://www.analog.com/media/en/technical-documentation/data-sheets/MAX31723PMB1.pdf
 
@@ -61,7 +61,67 @@ AD-APARD32690-SL (APARD):
 
 
 ## Milestones
-### **Replacing MAX78000FTHR with AD-APARD32690-SL**
+### **Transition from MAX78000FTHR to AD-APARD32690-SL** (7/2/2025)
+  - transitioned from MAX78000FTHR to AD-APARD32690-SL and modified the temperature sensor project code to perform single temperature reading and temperature reading by SW2 interrupt on AD-APARD32690-SL
+  - major differences and discoveries:
+    - _always remember to set the alternate function on the GPIO pins_
+      - this fixes the GPIO VDDIO mismatch issue
+      - can find the alternate function settings in the MAX32690 datasheet
+    - the AD-APARD32690-SL uses [SPI4 (SS0), P2.0 (LED1), P1.7 (SW2) while the MAX78000FTHR uses [SPI0 (SS1), P2.1 (LED1), P2.27 (SW2)]
+    - AD-APARD32690-SL requires both `gpio_isr()` and `gpio_callback()`
+    - `gpio_interrupt.pad` is `PULL-UP` for MAX78000FTHR but `NONE` for AD-APARD32690-SL
+  - expected output (The last few "Final Temperature" lines are triggered by SW2):
+    ```
+    *********************** SPI TEMPERATURE READ TEST ********************
+    This example configures SPI to get a single temperture reading from
+    MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2.
+    The interrupt also toggles on LED1.
+
+    Board: AD-APARD32690-SL
+    Performing blocking (synchronous) transactions...
+    SPI Initialization SUCCESS
+    SPI Mode Initialization SUCCESS
+
+    Reading Configuration Register...
+    Configuration Register: 0100 0110
+
+    Writing Configuration Register...
+    Configuration Register Value Sent: 0100 0110
+
+    Reading Configuration Register...
+    Configuration Register: 0110 0110
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 1010
+    Temperature MSB: 26
+
+    Reading Temperature LSB...
+    Temperature LSB: 0010 0000
+    Temperature LSB: 32
+    Temp_Fraction: 0.1250
+
+    Final Temperature: 26.1250
+
+    Final Temperature: 26.0625
+
+    Final Temperature: 28.2500
+
+    Final Temperature: 28.9375
+
+    Final Temperature: 29.4375
+
+    Final Temperature: 30.1875
+
+    Final Temperature: 28.9375
+
+    Final Temperature: 28.1250
+
+    Final Temperature: 27.6875
+
+    Final Temperature: 27.4375
+
+    Final Temperature: 27.1250
+    ```
 
 
 ### **Temperature Readings Triggered by Interrupts** (6/27/2025)
@@ -166,14 +226,14 @@ AD-APARD32690-SL (APARD):
 - **6/27/2025**
   - Explore the Asynchronous peripheral API (USE_ASYNC)
   - Modify the code to perform non-blocking transaction
-  - replacing MAX78000FTHR with AD-APARD32690-SL
+  - :white_check_mark: replacing MAX78000FTHR with AD-APARD32690-SL
     - :white_check_mark: single temperture reading
-    - read temperature through on-board switch interrupt
+    - :white_check_mark: read temperature through on-board switch interrupt
 - **6/24/2025**
-  - :white_check_mark:learn how to use the push buttons by reading MAX78000FTHR datasheet and the GPIO example code
-  - :white_check_mark:implement the interrupt such that when a button is pushed, a temperature reading is displayed on the serial monitor
-  - :arrow_down:perform continuous reading until keyboard interrupt
-  - :arrow_down:resample when the return value is invalid (0xFF)
+  - :white_check_mark: learn how to use the push buttons by reading MAX78000FTHR datasheet and the GPIO example code
+  - :white_check_mark: implement the interrupt such that when a button is pushed, a temperature reading is displayed on the serial monitor
+  - :arrow_down: perform continuous reading until keyboard interrupt
+  - :arrow_down: resample when the return value is invalid (0xFF)
 - **6/18/2025**
   - :white_check_mark: find MXC_SPI_MasterTransaction() definition (line 188 in main.c)
   - :white_check_mark: understand the receiving process (after line 213 in main.c)

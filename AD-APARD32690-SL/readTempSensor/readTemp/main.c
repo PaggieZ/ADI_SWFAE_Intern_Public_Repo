@@ -42,6 +42,12 @@
 // resolution for the temperature reading (9 - 12 bits)
 #define TEMP_RES 12 
 
+// (P2.27, SW2)
+#define IN_INTERRUPT_PORT MXC_GPIO1
+#define IN_INTERRUPT_PIN MXC_GPIO_PIN_27
+// (P2.1, LED1)
+#define OUT_INTERRUPT_PORT MXC_GPIO2
+#define OUT_INTERRUPT_PIN MXC_GPIO_PIN_1
 
 // define SPI GPIO pins for setting the VDDIO
 #define MXC_GPIO_PORT MXC_GPIO1
@@ -69,16 +75,51 @@ void SPI_Callback(mxc_spi_req_t *req, int error)
     SPI_FLAG = error;
 }
 
+void gpio_callback(void *cbdata)
+{
+    mxc_gpio_cfg_t *cfg = cbdata;
+    MXC_GPIO_OutToggle(cfg->port, cfg->mask);
+
+    // read temp MSB register
+    tx_data[0] = 0x02;
+    tx_data[1] = 0x00;
+    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
+    MXC_SPI_MasterTransaction(&req);
+    temp_MSB = rx_data[1];
+    
+
+    // read temp LSB register
+    tx_data[0] = 0x01;
+    tx_data[1] = 0x00;
+    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
+    MXC_SPI_MasterTransaction(&req);
+    temp_LSB = rx_data[1];
+
+    double temp_final = temp_MSB + temp_LSB/((float)256.0);
+    printf("\nFinal Temperature: %.4f\n", temp_final);
+}
+
+void gpio_isr(void)
+{
+    MXC_Delay(MXC_DELAY_MSEC(100)); // Debounce
+    MXC_GPIO_Handler(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT));
+
+}
+
+
 
 int main(void)
 {
     int retVal;
     mxc_spi_pins_t spi_pins;
 
+    mxc_gpio_cfg_t gpio_interrupt;
+    mxc_gpio_cfg_t gpio_interrupt_status;
+
     printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n");
     printf("This example configures SPI to get a single temperture reading from\n");
     printf("MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2.\n");
-    printf("The interrupt also turns on LED1.\n");
+    printf("The interrupt also toggles on LED1.\n");
 
     spi_pins.clock = TRUE;
     spi_pins.miso = TRUE;
@@ -110,6 +151,33 @@ int main(void)
     // Setup tx_data to read configuration register
     tx_data[0] = 0x00; // configuration register address
     tx_data[1] = 0x00; // dummy byte
+
+     /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
+    gpio_interrupt_status.port = OUT_INTERRUPT_PORT;
+    gpio_interrupt_status.mask = OUT_INTERRUPT_PIN;
+    gpio_interrupt_status.pad = MXC_GPIO_PAD_NONE;
+    gpio_interrupt_status.func = MXC_GPIO_FUNC_OUT;
+    gpio_interrupt_status.vssel = MXC_GPIO_VSSEL_VDDIO;
+    gpio_interrupt_status.drvstr = MXC_GPIO_DRVSTR_0;
+    MXC_GPIO_Config(&gpio_interrupt_status);
+
+    /*
+     *   Set up interrupt pin.
+     *   Switch on EV kit is open when non-pressed, and grounded when pressed.  Use an internal pull-up so pin
+     *     reads high when button is not pressed.
+     */
+    gpio_interrupt.port = IN_INTERRUPT_PORT;
+    gpio_interrupt.mask = IN_INTERRUPT_PIN;
+    gpio_interrupt.pad = MXC_GPIO_PAD_NONE;
+    gpio_interrupt.func = MXC_GPIO_FUNC_IN;
+    gpio_interrupt.vssel = MXC_GPIO_VSSEL_VDDIOH;
+    gpio_interrupt.drvstr = MXC_GPIO_DRVSTR_0;
+    MXC_GPIO_Config(&gpio_interrupt);
+    MXC_GPIO_RegisterCallback(&gpio_interrupt, gpio_callback, &gpio_interrupt_status);
+    MXC_GPIO_IntConfig(&gpio_interrupt, MXC_GPIO_INT_FALLING);
+    MXC_GPIO_EnableInt(gpio_interrupt.port, gpio_interrupt.mask);
+    NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
+    MXC_NVIC_SetVector(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)), gpio_isr);
 
     // Configure the peripheral
     // initialize the SPI port
@@ -258,6 +326,9 @@ int main(void)
 
     double temp_final = temp_MSB + temp_LSB/((float)256.0);
     printf("\nFinal Temperature: %.4f\n", temp_final);
+
+    while(1){ // listen to interrupts
+    }
 
     return 0;
 

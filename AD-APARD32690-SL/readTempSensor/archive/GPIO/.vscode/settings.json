@@ -15,14 +15,14 @@
     },
     
     "target":"MAX32690",
-    "board":"EvKit_V1",
+    "board":"APARD",
 
     "project_name":"${workspaceFolderBasename}",
 
     "program_file":"${config:project_name}.elf",
     "symbol_file":"${config:program_file}",
 
-    "M4_OCD_interface_file":"cmsis-dap.cfg",
+    "M4_OCD_interface_file":"jlink.cfg",
     "M4_OCD_target_file":"max32690.cfg",
     "RV_OCD_interface_file":"ftdi/olimex-arm-usb-ocd-h.cfg",
     "RV_OCD_target_file":"${config:target}_riscv.cfg",
