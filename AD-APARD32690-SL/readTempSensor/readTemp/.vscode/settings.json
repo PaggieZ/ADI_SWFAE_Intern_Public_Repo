@@ -74,6 +74,7 @@
     ],
     "C_Cpp.default.forcedInclude": [
         "${workspaceFolder}/build/project_defines.h"
-    ]
+    ],
+    "cortex-debug.variableUseNaturalFormat": false
 }
 

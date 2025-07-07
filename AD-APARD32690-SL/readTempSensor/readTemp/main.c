@@ -25,7 +25,9 @@
 
 
 /***** Preprocessors *****/
-#define MASTERSYNC 1
+#define MASTERSYNC 0
+#define MASTERASYNC 1
+//#define MASTERDMA 0
 
 /***** Definitions *****/
 #define DATA_LEN 2 
@@ -33,6 +35,8 @@
 // frequency = 100 kHz
 #define SPI_SPEED 100000
 #define SPI MXC_SPI4
+// for async transasction
+#define SPI_IRQ SPI4_IRQn
 #define SS_IDX 0
 
 #define FTHR_Defined 0
@@ -42,7 +46,7 @@
 // resolution for the temperature reading (9 - 12 bits)
 #define TEMP_RES 12 
 
-// (P2.27, SW2)
+// (P1.27, SW2)
 #define IN_INTERRUPT_PORT MXC_GPIO1
 #define IN_INTERRUPT_PIN MXC_GPIO_PIN_27
 // (P2.1, LED1)
@@ -63,48 +67,57 @@ mxc_gpio_cfg_t gpio_spi_pins;
 uint8_t rx_data[DATA_LEN];
 uint8_t tx_data[DATA_LEN];
 volatile int SPI_FLAG;
+volatile int ISR_SPI_FLAG = 0; // allow SW2 ISR to start an ISR transaction in main()
 volatile uint8_t DMA_FLAG = 0;
-mxc_spi_req_t req;
+mxc_spi_req_t req; // SPI transaction request
 
 uint8_t temp_MSB; // most significant byte of temperature reading
 uint8_t temp_LSB; // least significant byte of temperature reading
 
+// GPIO pins for interrupt
+mxc_gpio_cfg_t gpio_interrupt;
+mxc_gpio_cfg_t gpio_interrupt_status;
+
 /***** Functions *****/
+void SPI_IRQHandler(void)
+{
+    MXC_SPI_AsyncHandler(SPI);
+}
+
 void SPI_Callback(mxc_spi_req_t *req, int error)
 {
     SPI_FLAG = error;
 }
 
+// NOTE (BH): I would avoid firing off another transaction inside ISR
+//            In general, we want to be OUT of an ISR AS SOON AS WE CAN!
 void gpio_callback(void *cbdata)
 {
+    // EXAMPLE (BH): Just set a flag here and respond in main
+    // gpio_isr_flag = 1;
+    // ... (in main)
+    // while(1) {if (gpio_isr_flag == 1)) { // do stuff, then set flag low}}
+
+    // disable push button interrupt
+    NVIC_DisableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
+
     mxc_gpio_cfg_t *cfg = cbdata;
     MXC_GPIO_OutToggle(cfg->port, cfg->mask);
 
-    // read temp MSB register
-    tx_data[0] = 0x02;
-    tx_data[1] = 0x00;
-    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
-    MXC_SPI_MasterTransaction(&req);
-    temp_MSB = rx_data[1];
-    
-
-    // read temp LSB register
-    tx_data[0] = 0x01;
-    tx_data[1] = 0x00;
-    memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
-    MXC_SPI_MasterTransaction(&req);
-    temp_LSB = rx_data[1];
-
-    double temp_final = temp_MSB + temp_LSB/((float)256.0);
-    printf("\nFinal Temperature: %.4f\n", temp_final);
+    ISR_SPI_FLAG = 1;
 }
 
+// NOTE (BH)
+// If NVIC is not copied to RAM: GPIO1_IRQHandler
+// If NVIC is copied to RAM:     arbitrary name "gpio_isr"
+// 
+// To copy NVIC to RAM: NVIC_SetRAM() in "nvic_table.h"
 void gpio_isr(void)
 {
     MXC_Delay(MXC_DELAY_MSEC(100)); // Debounce
     MXC_GPIO_Handler(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT));
-
 }
+
 
 
 
@@ -112,9 +125,6 @@ int main(void)
 {
     int retVal;
     mxc_spi_pins_t spi_pins;
-
-    mxc_gpio_cfg_t gpio_interrupt;
-    mxc_gpio_cfg_t gpio_interrupt_status;
 
     printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n");
     printf("This example configures SPI to get a single temperture reading from\n");
@@ -141,7 +151,13 @@ int main(void)
 
 #if MASTERSYNC
     printf("Performing blocking (synchronous) transactions...\n");
+#elif MASTERASYNC
+    printf("Performing non-blocking (asynchronous) transactions...\n");
 #endif
+
+    // set up interrupt
+    MXC_NVIC_SetVector(SPI_IRQ, SPI_IRQHandler);
+    NVIC_EnableIRQ(SPI_IRQ);
 
     // initialize the tx buffer with 0x0
     // initialize the rx buffer with 0x0
@@ -152,7 +168,7 @@ int main(void)
     tx_data[0] = 0x00; // configuration register address
     tx_data[1] = 0x00; // dummy byte
 
-     /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
+    /* Setup interrupt status pin as an output so we can toggle it on each interrupt. */
     gpio_interrupt_status.port = OUT_INTERRUPT_PORT;
     gpio_interrupt_status.mask = OUT_INTERRUPT_PIN;
     gpio_interrupt_status.pad = MXC_GPIO_PAD_NONE;
@@ -227,7 +243,7 @@ int main(void)
     req.ssDeassert = 1;
     req.txCnt = 0;
     req.rxCnt = 0;
-    // req.completeCB = (spi_complete_cb_t)SPI_Callback;
+    req.completeCB = (spi_complete_cb_t)SPI_Callback;
     SPI_FLAG = 1;
 
     retVal = MXC_SPI_SetDataSize(SPI, 8);
@@ -243,13 +259,20 @@ int main(void)
         printf("\nSPI SET WIDTH ERROR: %d\n", retVal);
         return retVal;
     }
-    // clear the input buffer
-    MXC_SPI_ClearRXFIFO	(SPI);
-
 
     // Read the configuration register
     printf("\nReading Configuration Register...\n");
-    MXC_SPI_MasterTransaction(&req);
+
+    // async transaction
+    MXC_SPI_MasterTransactionAsync(&req);
+    int tempCount = 0; // allow the following while loop to only toggle the LED once
+    while (SPI_FLAG == 1) {
+        if (tempCount == 0) {
+            MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+            tempCount++;
+        }
+    }
+    
     printf("Configuration Register: ");
     for (int i = 7; i >= 0; i--) {
         printf("%d", (rx_data[1] >> i) & 1);
@@ -264,7 +287,17 @@ int main(void)
     tx_data[1] = 0b01000110;
     memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
     printf("\n\nWriting Configuration Register...\n");
-    MXC_SPI_MasterTransaction(&req);
+
+    // async transaction
+    MXC_SPI_MasterTransactionAsync(&req);
+    tempCount = 0; // allow the following while loop to only toggle the LED once
+    while (SPI_FLAG == 1) {
+        if (tempCount == 0) {
+            MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+            tempCount++;
+        }   
+    }
+    
     printf("Configuration Register Value Sent: ");
     for (int i = 7; i >= 0; i--) {
         printf("%d", (tx_data[1] >> i) & 1);
@@ -279,7 +312,17 @@ int main(void)
     tx_data[1] = 0x00;
     memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
     printf("\n\nReading Configuration Register...\n");
-    MXC_SPI_MasterTransaction(&req);
+    // async transaction
+    MXC_SPI_MasterTransactionAsync(&req);
+    tempCount = 0; // allow the following while loop to only toggle the LED once
+    SPI_FLAG = 1;
+    while (SPI_FLAG == 1) {
+        if (tempCount == 0) {
+            MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+            tempCount++;
+        }
+    }
+
     printf("Configuration Register: ");
     for (int i = 7; i >= 0; i--) {
         printf("%d", (rx_data[1] >> i) & 1);
@@ -294,7 +337,18 @@ int main(void)
     tx_data[1] = 0x00;
     memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
     printf("\n\nReading Temperature MSB...\n");
-    MXC_SPI_MasterTransaction(&req);
+
+    // async transaction
+    MXC_SPI_MasterTransactionAsync(&req);
+    tempCount = 0; // allow the following while loop to only toggle the LED once
+    SPI_FLAG = 1;
+    while (SPI_FLAG == 1) {
+        if (tempCount == 0) {
+            MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+            tempCount++;
+        }
+    }
+
     printf("Temperature MSB: ");
     for (int i = 7; i >= 0; i--) {
         printf("%d", (rx_data[1] >> i) & 1);
@@ -311,7 +365,18 @@ int main(void)
     tx_data[1] = 0x00;
     memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
     printf("\n\nReading Temperature LSB...\n");
-    MXC_SPI_MasterTransaction(&req);
+
+    // async transaction
+    MXC_SPI_MasterTransactionAsync(&req);
+    tempCount = 0; // allow the following while loop to only toggle the LED once
+    SPI_FLAG = 1;
+    while (SPI_FLAG == 1) {
+        if (tempCount == 0) {
+            MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+            tempCount++;
+        }
+    }
+    
     printf("Temperature LSB: ");
     for (int i = 7; i >= 0; i--) {
         printf("%d", (rx_data[1] >> i) & 1);
@@ -327,7 +392,77 @@ int main(void)
     double temp_final = temp_MSB + temp_LSB/((float)256.0);
     printf("\nFinal Temperature: %.4f\n", temp_final);
 
+    // Example (BH): Polling push button
+    // while(PB_Get(0) != TRUE) {}
+
+    // Example (BH): Respond to GPIO ISR Flag in main
+
+
     while(1){ // listen to interrupts
+        if (ISR_SPI_FLAG == 1) {
+            // read temp MSB register
+            tx_data[0] = 0x02;
+            tx_data[1] = 0x00;
+            memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
+            printf("\n\nReading Temperature MSB...\n");
+
+            // async transaction
+            MXC_SPI_MasterTransactionAsync(&req);
+            tempCount = 0; // allow the following while loop to only toggle the LED once
+            SPI_FLAG = 1;
+            while (SPI_FLAG == 1) {
+                if (tempCount == 0) {
+                    MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+                    tempCount++;
+                }
+            }
+
+            printf("Temperature MSB: ");
+            for (int i = 7; i >= 0; i--) {
+                printf("%d", (rx_data[1] >> i) & 1);
+                if (i == 4) {
+                    printf(" ");
+                }
+            }
+            printf("\nTemperature MSB: %d ", rx_data[1]);
+            temp_MSB = rx_data[1];
+            
+
+            // read temp LSB register
+            tx_data[0] = 0x01;
+            tx_data[1] = 0x00;
+            memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
+            printf("\n\nReading Temperature LSB...\n");
+
+            // async transaction
+            MXC_SPI_MasterTransactionAsync(&req);
+            tempCount = 0; // allow the following while loop to only toggle the LED once
+            SPI_FLAG = 1;
+            while (SPI_FLAG == 1) {
+                if (tempCount == 0) {
+                    MXC_GPIO_OutToggle(gpio_interrupt_status.port, gpio_interrupt_status.mask);
+                    tempCount++;
+                }
+            }
+            
+            printf("Temperature LSB: ");
+            for (int i = 7; i >= 0; i--) {
+                printf("%d", (rx_data[1] >> i) & 1);
+                if (i == 4) {
+                    printf(" ");
+                }
+            }
+            printf("\nTemperature LSB: %d ", rx_data[1]);
+            temp_LSB = rx_data[1];
+            printf("\nTemp_Fraction: %.4f\n", (double)(temp_LSB/256.0f));
+            
+
+            double temp_final = temp_MSB + temp_LSB/((float)256.0);
+            printf("\nFinal Temperature: %.4f\n", temp_final);
+            ISR_SPI_FLAG = 0;
+            // enable push button interrupt
+            NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT))); 
+        }
     }
 
     return 0;

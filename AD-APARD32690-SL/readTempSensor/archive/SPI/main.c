@@ -42,18 +42,18 @@
 
 /***** Preprocessors *****/
 //#define MASTERSYNC 1
-//#define MASTERASYNC 0
+#define MASTERASYNC 1
 //#define MASTERDMA 0
 // define three METHOD above in project.mk
 // MASTERSYNC  is default
 
 /***** Definitions *****/
-#define DATA_LEN 100 // Words
+#define DATA_LEN 2 // Words
 #define DATA_VALUE 0xA5A5 // This is for master mode only...
 #define VALUE 0xFFFF
 #define SPI_SPEED 100000 // Bit Rate
 
-#define SPI MXC_SPI4
+#define SPI MXC_SPI0
 #define SPI_IRQ SPI0_IRQn
 #define MOSI_PIN 28
 #define MISO_PIN 27
@@ -103,6 +103,7 @@ int main(void)
     spi_pins.ss0 = FALSE;
     spi_pins.ss1 = TRUE;
     spi_pins.ss2 = FALSE;
+    spi_pins.vddioh = MXC_GPIO_VSSEL_VDDIOH;
 
     for (i = 1; i < 17; i++) {
         if (i == 1) { // Sending out 2 to 16 bits
@@ -149,31 +150,15 @@ int main(void)
             return retVal;
         }
 
-#ifdef MASTERSYNC
-        MXC_SPI_MasterTransaction(&req);
-#endif
 
-#ifdef MASTERASYNC
+
         MXC_NVIC_SetVector(SPI_IRQ, SPI_IRQHandler);
         NVIC_EnableIRQ(SPI_IRQ);
         MXC_SPI_MasterTransactionAsync(&req);
 
         while (SPI_FLAG == 1) {}
 
-#endif
 
-#ifdef MASTERDMA
-        MXC_DMA_ReleaseChannel(0);
-        MXC_DMA_ReleaseChannel(1);
-
-        MXC_SPI_MasterTransactionDMA(&req);
-        NVIC_EnableIRQ(DMA0_IRQn);
-        NVIC_EnableIRQ(DMA1_IRQn);
-
-        while (DMA_FLAG == 0) {}
-
-        DMA_FLAG = 0;
-#endif
 
         uint8_t bits = MXC_SPI_GetDataSize(SPI);
 

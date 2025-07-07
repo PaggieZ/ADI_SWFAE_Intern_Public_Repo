@@ -61,6 +61,67 @@ AD-APARD32690-SL (APARD):
 
 
 ## Milestones
+### **Asynchronous SPI Transaction** (7/7/2025)
+  - implemented asynchronous SPI transaction pattern in the temperature reading project
+    - SPI asynchronous transaction note could be found in **SPI.pdf**.
+  - expected output (The last few "Final Temperature" sections are triggered by SW2):
+    ```
+    *********************** SPI TEMPERATURE READ TEST ********************
+    This example configures SPI to get a single temperture reading from
+    MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2.
+    The interrupt also toggles on LED1.
+
+    Board: AD-APARD32690-SL
+    Performing non-blocking (asynchronous) transactions...
+    SPI Initialization SUCCESS
+    SPI Mode Initialization SUCCESS
+
+    Reading Configuration Register...
+    Configuration Register: 0100 0110
+
+    Writing Configuration Register...
+    Configuration Register Value Sent: 0100 0110
+
+    Reading Configuration Register...
+    Configuration Register: 0110 0110
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 0111
+    Temperature MSB: 23
+
+    Reading Temperature LSB...
+    Temperature LSB: 0011 0000
+    Temperature LSB: 48
+    Temp_Fraction: 0.1875
+
+    Final Temperature: 23.1875
+
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 0111
+    Temperature MSB: 23
+
+    Reading Temperature LSB...
+    Temperature LSB: 0011 0000
+    Temperature LSB: 48
+    Temp_Fraction: 0.1875
+
+    Final Temperature: 23.1875
+
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 1001
+    Temperature MSB: 25
+
+    Reading Temperature LSB...
+    Temperature LSB: 0001 0000
+    Temperature LSB: 16
+    Temp_Fraction: 0.0625
+
+    Final Temperature: 25.0625
+    ```
+
+
 ### **Transition from MAX78000FTHR to AD-APARD32690-SL** (7/2/2025)
   - transitioned from MAX78000FTHR to AD-APARD32690-SL and modified the temperature sensor project code to perform single temperature reading and temperature reading by SW2 interrupt on AD-APARD32690-SL
   - major differences and discoveries:
@@ -72,7 +133,7 @@ AD-APARD32690-SL (APARD):
     - `gpio_interrupt.pad` is `PULL-UP` for MAX78000FTHR but `NONE` for AD-APARD32690-SL
   - expected output (The last few "Final Temperature" lines are triggered by SW2):
     ```
-    *********************** SPI TEMPERATURE READ TEST ********************
+    *********************** SPI TEMPERATURE READ TEST *******************
     This example configures SPI to get a single temperture reading from
     MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2.
     The interrupt also toggles on LED1.
@@ -221,11 +282,16 @@ AD-APARD32690-SL (APARD):
 ## Takeaways
 * Always make sure the VDDIO on all GPIOs are matched when driving a component
 * Always make sure to set the alternate function for GPIO pins
+* Always set the SPI flag before the while loop for asynchronous transaction
+* Perform minimum tasks in ISR
+  - use ISR to set a flag to trigger SPI transaction in main()
 
 ## Next Step
+- **7/7/2025**
+  - use timer interrupt to trigger temperature reading
 - **6/27/2025**
-  - Explore the Asynchronous peripheral API (USE_ASYNC)
-  - Modify the code to perform non-blocking transaction
+  - :white_check_mark: Explore the Asynchronous peripheral API (USE_ASYNC)
+  - :white_check_mark: Modify the code to perform non-blocking transaction
   - :white_check_mark: replacing MAX78000FTHR with AD-APARD32690-SL
     - :white_check_mark: single temperture reading
     - :white_check_mark: read temperature through on-board switch interrupt
