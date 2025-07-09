@@ -1,5 +1,5 @@
-C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/readTempSensor/readTemp/build/main.o: \
- main.c \
+C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/readTempSensor/archive/TMR/build/board.o: \
+ C:/workspace/msdk/Libraries/Boards/MAX32690/APARD/Source/board.c \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\stdio.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\_ansi.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\newlib.h \
@@ -29,16 +29,17 @@ C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/readTempSensor/readTemp/build/m
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\sched.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\types.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\stdio.h \
+ C:/workspace/msdk/Libraries/Boards/MAX32690/APARD/Include/board.h \
  c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdbool.h \
  c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdint.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\stdint.h \
  c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_intsup.h \
- c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\string.h \
- c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_locale.h \
- c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\strings.h \
- c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\string.h \
- C:/workspace/msdk/Libraries/Boards/MAX32690/APARD/Include/board.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/dma.h \
+ C:/workspace/msdk/Libraries/MiscDrivers/ExtMemory/Ext_Flash.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/gpio.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/gpio_regs.h \
+ C:/workspace/msdk/Libraries/MiscDrivers/LED/led.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_assert.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_delay.h \
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_device.h \
  C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/max32690.h \
  C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/core_cm4.h \
@@ -50,31 +51,16 @@ C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/readTempSensor/readTemp/build/m
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_errors.h \
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_pins.h \
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/gpio.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/gpio_regs.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/dma_regs.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_device.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_delay.h \
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_pins.h \
  C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_sys.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_device.h \
  C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/lpgcr_regs.h \
  C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/gcr_regs.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/nvic_table.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/spi.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_sys.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_assert.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_lock.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/spi_regs.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/uart.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/uart_regs.h \
  C:/workspace/msdk/Libraries/MiscDrivers/PushButton/pb.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/gpio.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/tmr.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/tmr_regs.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/mcr_regs.h \
- C:/workspace/msdk/Libraries/MiscDrivers/LED/led.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_assert.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/lp.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/pwrseq_regs.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/lpcmp.h \
- C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/lpcmp_regs.h \
- C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/tmr.h
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/spixf.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_sys.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/spixfc_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/spixfc_fifo_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/spixfm_regs.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/uart.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/uart_regs.h

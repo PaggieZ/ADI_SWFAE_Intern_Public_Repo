@@ -17,11 +17,21 @@
 #include "mxc_device.h"
 #include "mxc_delay.h"
 #include "mxc_pins.h"
+#include "mxc_sys.h"
+
 #include "nvic_table.h"
 #include "spi.h"
 #include "uart.h"
 #include "pb.h"
 #include "gpio.h"
+#include "tmr.h"
+#include "led.h"
+#include "lp.h"
+#include "lpgcr_regs.h"
+#include "gcr_regs.h"
+#include "pwrseq_regs.h"
+
+
 
 
 /***** Preprocessors *****/
@@ -31,6 +41,14 @@
 
 /***** Definitions *****/
 #define DATA_LEN 2 
+// SLEEP mode ensures all oscillators are enabled
+#define SLEEP_MODE 
+// use APB clock source for continuous timer
+#define CONT_CLOCK_SOURCE MXC_TMR_APB_CLK
+// timer interrupt frequency (Hz)
+#define CONT_FREQ 1
+// timer 0
+#define CONT_TIMER MXC_TMR0
 
 // frequency = 100 kHz
 #define SPI_SPEED 100000
@@ -67,7 +85,8 @@ mxc_gpio_cfg_t gpio_spi_pins;
 uint8_t rx_data[DATA_LEN];
 uint8_t tx_data[DATA_LEN];
 volatile int SPI_FLAG;
-volatile int ISR_SPI_FLAG = 0; // allow SW2 ISR to start an ISR transaction in main()
+volatile int SW_SPI_FLAG = 0; // SPI transaction thru SW2 GPIO interrupt
+volatile int TMR_SPI_FLAG = 0; // SPI transaction thru timer interrupt
 volatile uint8_t DMA_FLAG = 0;
 mxc_spi_req_t req; // SPI transaction request
 
@@ -77,6 +96,9 @@ uint8_t temp_LSB; // least significant byte of temperature reading
 // GPIO pins for interrupt
 mxc_gpio_cfg_t gpio_interrupt;
 mxc_gpio_cfg_t gpio_interrupt_status;
+
+int interruptInterval = 5; // 5 seconds
+int interruptCounter = 0;
 
 /***** Functions *****/
 void SPI_IRQHandler(void)
@@ -104,7 +126,7 @@ void gpio_callback(void *cbdata)
     mxc_gpio_cfg_t *cfg = cbdata;
     MXC_GPIO_OutToggle(cfg->port, cfg->mask);
 
-    ISR_SPI_FLAG = 1;
+    SW_SPI_FLAG = 1;
 }
 
 // NOTE (BH)
@@ -119,6 +141,64 @@ void gpio_isr(void)
 }
 
 
+// Toggles GPIO when continuous timer repeats
+void ContinuousTimerHandler(void)
+{
+    // Clear interrupt
+    // always clear the timer flag in the handler
+    MXC_TMR_ClearFlags(CONT_TIMER);
+
+    // update the interrupt counter
+    if (interruptCounter < interruptInterval) {
+        interruptCounter++;
+    } else {
+        // disable push button interrupt
+        NVIC_DisableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
+        LED_Toggle(0); // toggle LED index 0
+        TMR_SPI_FLAG = 1;
+        interruptCounter = 0;
+    }
+    
+}
+
+void ContinuousTimer(void)
+{
+    // Declare variables
+    mxc_tmr_cfg_t tmr;
+    uint32_t periodTicks = MXC_TMR_GetPeriod(CONT_TIMER, CONT_CLOCK_SOURCE, 32, CONT_FREQ);
+
+    /*
+    Steps for configuring a timer for PWM mode:
+    1. Disable the timer
+    2. Set the prescale value
+    3  Configure the timer for continuous mode
+    4. Set polarity, timer parameters
+    5. Enable Timer
+    */
+
+    MXC_TMR_Shutdown(CONT_TIMER);
+
+    tmr.pres = TMR_PRES_32; // prescaler
+    tmr.mode = TMR_MODE_CONTINUOUS;
+    tmr.bitMode = TMR_BIT_MODE_32; // 32-bit mode
+    tmr.clock = CONT_CLOCK_SOURCE; // APB
+    tmr.cmp_cnt = periodTicks; //SystemCoreClock*(1/interval_time);
+    tmr.pol = 0;
+
+    if (MXC_TMR_Init(CONT_TIMER, &tmr, 0) != E_NO_ERROR) {
+        printf("Failed Continuous timer Initialization.\n");
+        return;
+    }
+
+    MXC_TMR_EnableInt(CONT_TIMER);
+
+    MXC_NVIC_SetVector(TMR0_IRQn, ContinuousTimerHandler);
+    NVIC_EnableIRQ(TMR0_IRQn);
+
+    MXC_TMR_Start(CONT_TIMER);
+
+    printf("\n\n****   CONTINUOUS TIMER START   ****\n\n");
+}
 
 
 int main(void)
@@ -128,8 +208,9 @@ int main(void)
 
     printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n");
     printf("This example configures SPI to get a single temperture reading from\n");
-    printf("MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2.\n");
-    printf("The interrupt also toggles on LED1.\n");
+    printf("MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2\n");
+    printf("or by a 5-second timer. The initial press of SW2 enables the timer.\n");
+    printf("Both the timer interrupts and GPIO (SW2) interrupts toggle LED1.\n");
 
     spi_pins.clock = TRUE;
     spi_pins.miso = TRUE;
@@ -157,7 +238,6 @@ int main(void)
 
     // set up interrupt
     MXC_NVIC_SetVector(SPI_IRQ, SPI_IRQHandler);
-    NVIC_EnableIRQ(SPI_IRQ);
 
     // initialize the tx buffer with 0x0
     // initialize the rx buffer with 0x0
@@ -397,14 +477,22 @@ int main(void)
 
     // Example (BH): Respond to GPIO ISR Flag in main
 
+    // Wait until button press to start PWM and continuous timers
+    while (!PB_Get(0)) {}
+
+    // enable push button interrupt
+    NVIC_EnableIRQ(SPI_IRQ);
+    // Start continuous timer
+    ContinuousTimer();
+    MXC_Delay(MXC_DELAY_SEC(1)); // pause for a second
 
     while(1){ // listen to interrupts
-        if (ISR_SPI_FLAG == 1) {
+        if ((TMR_SPI_FLAG || SW_SPI_FLAG) == 1) {
             // read temp MSB register
             tx_data[0] = 0x02;
             tx_data[1] = 0x00;
             memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
-            printf("\n\nReading Temperature MSB...\n");
+            // printf("\n\nReading Temperature MSB...\n");
 
             // async transaction
             MXC_SPI_MasterTransactionAsync(&req);
@@ -417,14 +505,14 @@ int main(void)
                 }
             }
 
-            printf("Temperature MSB: ");
-            for (int i = 7; i >= 0; i--) {
-                printf("%d", (rx_data[1] >> i) & 1);
-                if (i == 4) {
-                    printf(" ");
-                }
-            }
-            printf("\nTemperature MSB: %d ", rx_data[1]);
+            // printf("Temperature MSB: ");
+            // for (int i = 7; i >= 0; i--) {
+            //     printf("%d", (rx_data[1] >> i) & 1);
+            //     if (i == 4) {
+            //         printf(" ");
+            //     }
+            // }
+            // printf("\nTemperature MSB: %d ", rx_data[1]);
             temp_MSB = rx_data[1];
             
 
@@ -432,7 +520,7 @@ int main(void)
             tx_data[0] = 0x01;
             tx_data[1] = 0x00;
             memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
-            printf("\n\nReading Temperature LSB...\n");
+            // printf("\n\nReading Temperature LSB...\n");
 
             // async transaction
             MXC_SPI_MasterTransactionAsync(&req);
@@ -445,21 +533,29 @@ int main(void)
                 }
             }
             
-            printf("Temperature LSB: ");
-            for (int i = 7; i >= 0; i--) {
-                printf("%d", (rx_data[1] >> i) & 1);
-                if (i == 4) {
-                    printf(" ");
-                }
-            }
-            printf("\nTemperature LSB: %d ", rx_data[1]);
+            // printf("Temperature LSB: ");
+            // for (int i = 7; i >= 0; i--) {
+            //     printf("%d", (rx_data[1] >> i) & 1);
+            //     if (i == 4) {
+            //         printf(" ");
+            //     }
+            // }
+            // printf("\nTemperature LSB: %d ", rx_data[1]);
             temp_LSB = rx_data[1];
-            printf("\nTemp_Fraction: %.4f\n", (double)(temp_LSB/256.0f));
+            // printf("\nTemp_Fraction: %.4f\n", (double)(temp_LSB/256.0f));
             
 
             double temp_final = temp_MSB + temp_LSB/((float)256.0);
-            printf("\nFinal Temperature: %.4f\n", temp_final);
-            ISR_SPI_FLAG = 0;
+
+            if (TMR_SPI_FLAG == 1) {
+                printf("\nTIMER0: \n");
+            } else {
+                printf("\nSW2: \n");
+            }
+            printf("Final Temperature: %.4f\n", temp_final);
+            // clear both timer and switch interrupt flags
+            TMR_SPI_FLAG = 0;
+            SW_SPI_FLAG = 0;
             // enable push button interrupt
             NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT))); 
         }

@@ -61,6 +61,79 @@ AD-APARD32690-SL (APARD):
 
 
 ## Milestones
+### **Timer-Interrupted SPI Transaction** (7/8/2025)
+  - implemented a 5-second continuous timer ISR using TMR0 to start an asynchronous temperature reading.
+  - referced the continuous timer implementaion in `TMR` Example Code
+    - added a timer initailization function and a timer callback function
+  - The continuous timer is enabled by pressing SW2. After the initial press, SW2 is used for GPIO interrupt.
+  - I took some notes while reading the MAX32690 datasheet to understand timers and clocks in AD-APARD32690-SL for future project.
+    - `AD-APARD32690-SL.pdf` in the folder
+    - `timer.pdf` in the folder
+  - expected output:
+    ```
+    *********************** SPI TEMPERATURE READ TEST ********************
+    This example configures SPI to get a single temperture reading from
+    MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2
+    or by a 5-second timer. The initial press of SW2 enables the timer.
+    Both the timer interrupts and GPIO (SW2) interrupts toggle LED1.
+
+    Board: AD-APARD32690-SL
+    Performing non-blocking (asynchronous) transactions...
+    SPI Initialization SUCCESS
+    SPI Mode Initialization SUCCESS
+
+    Reading Configuration Register...
+    Configuration Register: 0100 0110
+
+    Writing Configuration Register...
+    Configuration Register Value Sent: 0100 0110
+
+    Reading Configuration Register...
+    Configuration Register: 0110 0110
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 1000
+    Temperature MSB: 24
+
+    Reading Temperature LSB...
+    Temperature LSB: 1011 0000
+    Temperature LSB: 176
+    Temp_Fraction: 0.6875
+
+    Final Temperature: 24.6875
+
+
+    ****   CONTINUOUS TIMER START   ****
+
+
+    SW2:
+    Final Temperature: 24.5625
+
+    TIMER0:
+    Final Temperature: 26.9375
+
+    SW2:
+    Final Temperature: 28.0625
+
+    SW2:
+    Final Temperature: 28.9375
+
+    TIMER0:
+    Final Temperature: 28.3125
+
+    SW2:
+    Final Temperature: 28.0625
+
+    TIMER0:
+    Final Temperature: 26.1250
+
+    TIMER0:
+    Final Temperature: 25.6875
+
+    TIMER0:
+    Final Temperature: 25.4375
+    ```
+
 ### **Asynchronous SPI Transaction** (7/7/2025)
   - implemented asynchronous SPI transaction pattern in the temperature reading project
     - SPI asynchronous transaction note could be found in **SPI.pdf**.
@@ -285,10 +358,13 @@ AD-APARD32690-SL (APARD):
 * Always set the SPI flag before the while loop for asynchronous transaction
 * Perform minimum tasks in ISR
   - use ISR to set a flag to trigger SPI transaction in main()
+* Always clear the timer flag in the timer callback function.
 
 ## Next Step
+- **7/8/2025**
+  - use RTC to implement the 5-second timer
 - **7/7/2025**
-  - use timer interrupt to trigger temperature reading
+  - :white_check_mark: use timer interrupt to trigger temperature reading
 - **6/27/2025**
   - :white_check_mark: Explore the Asynchronous peripheral API (USE_ASYNC)
   - :white_check_mark: Modify the code to perform non-blocking transaction
