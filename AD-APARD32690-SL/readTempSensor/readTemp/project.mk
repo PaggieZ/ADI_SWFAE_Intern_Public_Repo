@@ -34,6 +34,5 @@ MXC_OPTIMIZE_CFLAGS = -O0 -Og
 # https://www.analog.com/en/education/education-library/videos/6313214207112.html
 SBT=0
 
-
-METHOD ?= MASTERSYNC
-PROJ_CFLAGS += -D$(METHOD)
+# METHOD ?= MASTERSYNC
+# PROJ_CFLAGS += -D$(METHOD)

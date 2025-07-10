@@ -17,21 +17,13 @@
 #include "mxc_device.h"
 #include "mxc_delay.h"
 #include "mxc_pins.h"
-#include "mxc_sys.h"
-
 #include "nvic_table.h"
 #include "spi.h"
 #include "uart.h"
 #include "pb.h"
 #include "gpio.h"
-#include "tmr.h"
+#include "rtc.h"
 #include "led.h"
-#include "lp.h"
-#include "lpgcr_regs.h"
-#include "gcr_regs.h"
-#include "pwrseq_regs.h"
-
-
 
 
 /***** Preprocessors *****/
@@ -41,14 +33,6 @@
 
 /***** Definitions *****/
 #define DATA_LEN 2 
-// SLEEP mode ensures all oscillators are enabled
-#define SLEEP_MODE 
-// use APB clock source for continuous timer
-#define CONT_CLOCK_SOURCE MXC_TMR_APB_CLK
-// timer interrupt frequency (Hz)
-#define CONT_FREQ 1
-// timer 0
-#define CONT_TIMER MXC_TMR0
 
 // frequency = 100 kHz
 #define SPI_SPEED 100000
@@ -85,8 +69,8 @@ mxc_gpio_cfg_t gpio_spi_pins;
 uint8_t rx_data[DATA_LEN];
 uint8_t tx_data[DATA_LEN];
 volatile int SPI_FLAG;
-volatile int SW_SPI_FLAG = 0; // SPI transaction thru SW2 GPIO interrupt
-volatile int TMR_SPI_FLAG = 0; // SPI transaction thru timer interrupt
+volatile int ISR_SPI_FLAG = 0; // allow SW2 ISR to start an SPI transaction in main()
+volatile int RTC_SPI_FLAG = 0; // allow the RTC to start an SPI transaction in main()
 volatile uint8_t DMA_FLAG = 0;
 mxc_spi_req_t req; // SPI transaction request
 
@@ -97,8 +81,22 @@ uint8_t temp_LSB; // least significant byte of temperature reading
 mxc_gpio_cfg_t gpio_interrupt;
 mxc_gpio_cfg_t gpio_interrupt_status;
 
-int interruptInterval = 5; // 5 seconds
-int interruptCounter = 0;
+
+
+
+/***** RTC Related Definitions *****/
+#define LED_ALARM 0
+#define LED_TODA 1
+
+#define TIME_OF_DAY_SEC 5
+
+#define MSEC_TO_RSSA(x) \
+    (0 - ((x * 4096) /  \
+          1000)) /* Converts a time in milleseconds to the equivalent RSSA register value. */
+
+#define SECS_PER_MIN 60
+#define SECS_PER_HR (60 * SECS_PER_MIN)
+#define SECS_PER_DAY (24 * SECS_PER_HR)
 
 /***** Functions *****/
 void SPI_IRQHandler(void)
@@ -111,28 +109,18 @@ void SPI_Callback(mxc_spi_req_t *req, int error)
     SPI_FLAG = error;
 }
 
-// NOTE (BH): I would avoid firing off another transaction inside ISR
-//            In general, we want to be OUT of an ISR AS SOON AS WE CAN!
+
 void gpio_callback(void *cbdata)
 {
-    // EXAMPLE (BH): Just set a flag here and respond in main
-    // gpio_isr_flag = 1;
-    // ... (in main)
-    // while(1) {if (gpio_isr_flag == 1)) { // do stuff, then set flag low}}
-
     // disable push button interrupt
     NVIC_DisableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
 
     mxc_gpio_cfg_t *cfg = cbdata;
     MXC_GPIO_OutToggle(cfg->port, cfg->mask);
 
-    SW_SPI_FLAG = 1;
+    ISR_SPI_FLAG = 1;
 }
 
-// NOTE (BH)
-// If NVIC is not copied to RAM: GPIO1_IRQHandler
-// If NVIC is copied to RAM:     arbitrary name "gpio_isr"
-// 
 // To copy NVIC to RAM: NVIC_SetRAM() in "nvic_table.h"
 void gpio_isr(void)
 {
@@ -141,76 +129,76 @@ void gpio_isr(void)
 }
 
 
-// Toggles GPIO when continuous timer repeats
-void ContinuousTimerHandler(void)
+/***** Functions *****/
+void RTC_IRQHandler(void)
 {
-    // Clear interrupt
-    // always clear the timer flag in the handler
-    MXC_TMR_ClearFlags(CONT_TIMER);
+    uint32_t time;
+    int flags = MXC_RTC_GetFlags();
 
-    // update the interrupt counter
-    if (interruptCounter < interruptInterval) {
-        interruptCounter++;
-    } else {
-        // disable push button interrupt
-        NVIC_DisableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT)));
-        LED_Toggle(0); // toggle LED index 0
-        TMR_SPI_FLAG = 1;
-        interruptCounter = 0;
-    }
-    
-}
 
-void ContinuousTimer(void)
-{
-    // Declare variables
-    mxc_tmr_cfg_t tmr;
-    uint32_t periodTicks = MXC_TMR_GetPeriod(CONT_TIMER, CONT_CLOCK_SOURCE, 32, CONT_FREQ);
+    /* Check time-of-day alarm flag. */
+    if (flags & MXC_F_RTC_CTRL_TOD_ALARM) {
+        MXC_RTC_ClearFlags(MXC_F_RTC_CTRL_TOD_ALARM);
+        LED_Toggle(LED_TODA);
+        RTC_SPI_FLAG = 1;
 
-    /*
-    Steps for configuring a timer for PWM mode:
-    1. Disable the timer
-    2. Set the prescale value
-    3  Configure the timer for continuous mode
-    4. Set polarity, timer parameters
-    5. Enable Timer
-    */
+        // wait if RTC is busy
+        while (MXC_RTC_DisableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {}
 
-    MXC_TMR_Shutdown(CONT_TIMER);
+        /* Set a new alarm TIME_OF_DAY_SEC seconds from current time. */
+        /* Don't need to check busy here as it was checked in MXC_RTC_DisableInt() */
+        MXC_RTC_GetSeconds(&time);
 
-    tmr.pres = TMR_PRES_32; // prescaler
-    tmr.mode = TMR_MODE_CONTINUOUS;
-    tmr.bitMode = TMR_BIT_MODE_32; // 32-bit mode
-    tmr.clock = CONT_CLOCK_SOURCE; // APB
-    tmr.cmp_cnt = periodTicks; //SystemCoreClock*(1/interval_time);
-    tmr.pol = 0;
+        if (MXC_RTC_SetTimeofdayAlarm(time + TIME_OF_DAY_SEC) != E_NO_ERROR) {
+            /* Handle Error */
+        }
 
-    if (MXC_TMR_Init(CONT_TIMER, &tmr, 0) != E_NO_ERROR) {
-        printf("Failed Continuous timer Initialization.\n");
-        return;
+        while (MXC_RTC_EnableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {}
     }
 
-    MXC_TMR_EnableInt(CONT_TIMER);
-
-    MXC_NVIC_SetVector(TMR0_IRQn, ContinuousTimerHandler);
-    NVIC_EnableIRQ(TMR0_IRQn);
-
-    MXC_TMR_Start(CONT_TIMER);
-
-    printf("\n\n****   CONTINUOUS TIMER START   ****\n\n");
+    return;
 }
 
+void printTime(void)
+{
+    int day, hr, min, err;
+    uint32_t sec, rtc_readout;
+    double subsec;
+
+    do {
+        err = MXC_RTC_GetSubSeconds(&rtc_readout);
+    } while (err != E_NO_ERROR);
+    subsec = rtc_readout / 4096.0;
+
+    do {
+        err = MXC_RTC_GetSeconds(&rtc_readout);
+    } while (err != E_NO_ERROR);
+    sec = rtc_readout;
+
+    day = sec / SECS_PER_DAY;
+    sec -= day * SECS_PER_DAY;
+
+    hr = sec / SECS_PER_HR;
+    sec -= hr * SECS_PER_HR;
+
+    min = sec / SECS_PER_MIN;
+    sec -= min * SECS_PER_MIN;
+
+    subsec += sec;
+
+    printf("\nCurrent Time (dd:hh:mm:ss): %02d:%02d:%02d:%05.2f\n", day, hr, min, subsec);
+}
 
 int main(void)
 {
     int retVal;
     mxc_spi_pins_t spi_pins;
 
-    printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n");
+    printf("\n\n\n*********************** SPI TEMPERATURE READ TEST ********************\n\n");
     printf("This example configures SPI to get a single temperture reading from\n");
     printf("MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2\n");
-    printf("or by a 5-second timer. The initial press of SW2 enables the timer.\n");
-    printf("Both the timer interrupts and GPIO (SW2) interrupts toggle LED1.\n");
+    printf("or by a 5-second RTC time-of-day alarm. The SW2 interrupt toggles LED1 (blue).\n");
+    printf("The RTC interrupt toggles LED2 (green).\n\n");
 
     spi_pins.clock = TRUE;
     spi_pins.miso = TRUE;
@@ -238,6 +226,7 @@ int main(void)
 
     // set up interrupt
     MXC_NVIC_SetVector(SPI_IRQ, SPI_IRQHandler);
+    NVIC_EnableIRQ(SPI_IRQ);
 
     // initialize the tx buffer with 0x0
     // initialize the rx buffer with 0x0
@@ -438,7 +427,6 @@ int main(void)
     }
     printf("\nTemperature MSB: %d ", rx_data[1]);
     temp_MSB = rx_data[1];
-    
 
     // read temp LSB register
     tx_data[0] = 0x01;
@@ -472,27 +460,61 @@ int main(void)
     double temp_final = temp_MSB + temp_LSB/((float)256.0);
     printf("\nFinal Temperature: %.4f\n", temp_final);
 
-    // Example (BH): Polling push button
-    // while(PB_Get(0) != TRUE) {}
 
-    // Example (BH): Respond to GPIO ISR Flag in main
 
-    // Wait until button press to start PWM and continuous timers
-    while (!PB_Get(0)) {}
 
-    // enable push button interrupt
-    NVIC_EnableIRQ(SPI_IRQ);
-    // Start continuous timer
-    ContinuousTimer();
-    MXC_Delay(MXC_DELAY_SEC(1)); // pause for a second
+    NVIC_EnableIRQ(RTC_IRQn);
+
+    /* Turn LED off initially */
+    LED_Off(LED_ALARM);
+    LED_Off(LED_TODA);
+
+    if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
+        printf("Failed RTC Initialization\n");
+        printf("Example Failed\n");
+
+        while (1) {}
+    }
+
+    // disable interrupt for setting up the time-of-day alarm
+    if (MXC_RTC_DisableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {
+        return E_BUSY;
+    }
+
+    if (MXC_RTC_SetTimeofdayAlarm(TIME_OF_DAY_SEC) != E_NO_ERROR) {
+        printf("Failed RTC_SetTimeofdayAlarm\n");
+        printf("Example Failed\n");
+
+        while (1) {}
+    }
+
+    if (MXC_RTC_EnableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {
+        return E_BUSY;
+    }
+
+    
+
+    if (MXC_RTC_SquareWaveStart(MXC_RTC_F_512HZ) == E_BUSY) {
+        return E_BUSY;
+    }
+
+    if (MXC_RTC_Start() != E_NO_ERROR) {
+        printf("Failed RTC_Start\n");
+        printf("Example Failed\n");
+
+        while (1) {}
+    }
+
+    printf("\nRTC started");
+    printTime();
+
 
     while(1){ // listen to interrupts
-        if ((TMR_SPI_FLAG || SW_SPI_FLAG) == 1) {
+        if ((ISR_SPI_FLAG || RTC_SPI_FLAG) == 1) {
             // read temp MSB register
             tx_data[0] = 0x02;
             tx_data[1] = 0x00;
             memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t));
-            // printf("\n\nReading Temperature MSB...\n");
 
             // async transaction
             MXC_SPI_MasterTransactionAsync(&req);
@@ -505,14 +527,6 @@ int main(void)
                 }
             }
 
-            // printf("Temperature MSB: ");
-            // for (int i = 7; i >= 0; i--) {
-            //     printf("%d", (rx_data[1] >> i) & 1);
-            //     if (i == 4) {
-            //         printf(" ");
-            //     }
-            // }
-            // printf("\nTemperature MSB: %d ", rx_data[1]);
             temp_MSB = rx_data[1];
             
 
@@ -520,7 +534,6 @@ int main(void)
             tx_data[0] = 0x01;
             tx_data[1] = 0x00;
             memset(rx_data, 0x00, DATA_LEN * sizeof(uint8_t)); 
-            // printf("\n\nReading Temperature LSB...\n");
 
             // async transaction
             MXC_SPI_MasterTransactionAsync(&req);
@@ -533,29 +546,22 @@ int main(void)
                 }
             }
             
-            // printf("Temperature LSB: ");
-            // for (int i = 7; i >= 0; i--) {
-            //     printf("%d", (rx_data[1] >> i) & 1);
-            //     if (i == 4) {
-            //         printf(" ");
-            //     }
-            // }
-            // printf("\nTemperature LSB: %d ", rx_data[1]);
             temp_LSB = rx_data[1];
-            // printf("\nTemp_Fraction: %.4f\n", (double)(temp_LSB/256.0f));
             
-
+            // calculate final temperature    
             double temp_final = temp_MSB + temp_LSB/((float)256.0);
 
-            if (TMR_SPI_FLAG == 1) {
-                printf("\nTIMER0: \n");
+            if(ISR_SPI_FLAG) {
+                printf("\n\nSW2:");
             } else {
-                printf("\nSW2: \n");
+                printf("\n\nRTC: ");
             }
+
+            printTime();
+
             printf("Final Temperature: %.4f\n", temp_final);
-            // clear both timer and switch interrupt flags
-            TMR_SPI_FLAG = 0;
-            SW_SPI_FLAG = 0;
+            ISR_SPI_FLAG = 0;
+            RTC_SPI_FLAG = 0;
             // enable push button interrupt
             NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(IN_INTERRUPT_PORT))); 
         }
@@ -564,4 +570,3 @@ int main(void)
     return 0;
 
 }
-

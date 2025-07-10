@@ -61,9 +61,78 @@ AD-APARD32690-SL (APARD):
 
 
 ## Milestones
+### **RTC Alarm-Interrupted SPI Transaction** (7/10/2025)
+  - implemented a 5-second RTC time-of-day alarm ISR to start an asynchronous temperature reading.
+    - using similar techniques as in **Timer-Interrupted SPI Transaction** milestone, I added a RTC_SPI_FLAG to trigger the transaction in the RTC request handler
+  - can still use SW2 to trigger an temperature reading
+  - this marks the completion of the temperture reading project with MSDK :smiley:
+  - will move on to CircuitPython :grin:
+  - expected output: 
+    ```
+    *********************** SPI TEMPERATURE READ TEST ********************
+
+    This example configures SPI to get a single temperture reading from
+    MAX31723 to AD-APARD32690-SL when an interrupt is triggered by pressing SW2
+    or by a 5-second RTC time-of-day alarm. The SW2 interrupt toggles LED1 (blue).
+    The RTC interrupt toggles LED2 (green).
+
+
+    Board: AD-APARD32690-SL
+    Performing non-blocking (asynchronous) transactions...
+    SPI Initialization SUCCESS
+    SPI Mode Initialization SUCCESS
+
+    Reading Configuration Register...
+    Configuration Register: 0100 0110
+
+    Writing Configuration Register...
+    Configuration Register Value Sent: 0100 0110
+
+    Reading Configuration Register...
+    Configuration Register: 0110 0110
+
+    Reading Temperature MSB...
+    Temperature MSB: 0001 0111
+    Temperature MSB: 23
+
+    Reading Temperature LSB...
+    Temperature LSB: 1001 0000
+    Temperature LSB: 144
+    Temp_Fraction: 0.5625
+
+    Final Temperature: 23.5625
+
+    RTC started
+    Current Time (dd:hh:mm:ss): 00:00:00:00.00
+
+
+    SW2:
+    Current Time (dd:hh:mm:ss): 00:00:00:03.77
+    Final Temperature: 25.1875
+
+
+    RTC:
+    Current Time (dd:hh:mm:ss): 00:00:00:05.00
+    Final Temperature: 25.3125
+
+
+    SW2:
+    Current Time (dd:hh:mm:ss): 00:00:00:05.72
+    Final Temperature: 24.8125
+
+
+    SW2:
+    Current Time (dd:hh:mm:ss): 00:00:00:06.40
+    Final Temperature: 24.5625
+
+    RTC:
+    Current Time (dd:hh:mm:ss): 00:00:00:10.00
+    Final Temperature: 26.9375
+    ```
+
 ### **Timer-Interrupted SPI Transaction** (7/8/2025)
   - implemented a 5-second continuous timer ISR using TMR0 to start an asynchronous temperature reading.
-  - referced the continuous timer implementaion in `TMR` Example Code
+  - referenced the continuous timer implementaion in `TMR` Example Code
     - added a timer initailization function and a timer callback function
   - The continuous timer is enabled by pressing SW2. After the initial press, SW2 is used for GPIO interrupt.
   - I took some notes while reading the MAX32690 datasheet to understand timers and clocks in AD-APARD32690-SL for future project.
@@ -341,8 +410,7 @@ AD-APARD32690-SL (APARD):
 
       Example Complete.
       ```
-    
-## Questions
+
 
 
 ## Interesting Topics
@@ -358,11 +426,17 @@ AD-APARD32690-SL (APARD):
 * Always set the SPI flag before the while loop for asynchronous transaction
 * Perform minimum tasks in ISR
   - use ISR to set a flag to trigger SPI transaction in main()
-* Always clear the timer flag in the timer callback function.
+* Always clear the timer flag in the timer callback function fro exiting the while loop in asynchronous implementation
+* Use the corresponsing shell to open vscode (Windows vs. Linux)
+
+## Notes
+* Timers and clocks on MAX32690: AD-APARD32690-SL.pdf
+* Timers in general: Timer.pdf
+* Sync and Async SPI: SPI.pdf
 
 ## Next Step
 - **7/8/2025**
-  - use RTC to implement the 5-second timer
+  - :white_check_mark: use RTC to implement the 5-second timer
 - **7/7/2025**
   - :white_check_mark: use timer interrupt to trigger temperature reading
 - **6/27/2025**

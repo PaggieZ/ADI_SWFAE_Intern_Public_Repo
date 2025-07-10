@@ -40,6 +40,7 @@
 #include "pb.h"
 #include "mxc_delay.h"
 
+
 /***** Definitions *****/
 #define LED_ALARM 0
 #define LED_TODA 1
@@ -76,6 +77,7 @@ void RTC_IRQHandler(void)
         MXC_RTC_ClearFlags(MXC_F_RTC_CTRL_TOD_ALARM);
         LED_Toggle(LED_TODA);
 
+        // wait if RTC is busy
         while (MXC_RTC_DisableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {}
 
         /* Set a new alarm TIME_OF_DAY_SEC seconds from current time. */
@@ -89,6 +91,7 @@ void RTC_IRQHandler(void)
         while (MXC_RTC_EnableInt(MXC_F_RTC_CTRL_TOD_ALARM_IE) == E_BUSY) {}
 
         // Toggle the sub-second alarm interval.
+        // toggle between 500 and 250
         if (ss_interval == SUBSECOND_MSEC_0) {
             ss_interval = SUBSECOND_MSEC_1;
         } else {
