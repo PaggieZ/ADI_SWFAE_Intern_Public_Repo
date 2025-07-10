@@ -430,9 +430,9 @@ AD-APARD32690-SL (APARD):
 * Use the corresponsing shell to open vscode (Windows vs. Linux)
 
 ## Notes
-* Timers and clocks on MAX32690: AD-APARD32690-SL.pdf
-* Timers in general: Timer.pdf
-* Sync and Async SPI: SPI.pdf
+* Timers and clocks on MAX32690: **AD-APARD32690-SL.pdf**
+* Timers in general: **Timer.pdf**
+* Sync and Async SPI: **SPI.pdf**
 
 ## Next Step
 - **7/8/2025**
