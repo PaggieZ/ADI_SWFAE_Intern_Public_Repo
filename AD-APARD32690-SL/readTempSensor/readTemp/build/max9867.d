@@ -1,0 +1,29 @@
+C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/readTempSensor/readTemp/build/max9867.o: \
+ C:/workspace/msdk/Libraries/MiscDrivers/CODEC/max9867.c \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\_default_types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\features.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\_newlib_version.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_intsup.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_stdint.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/i2c.h \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdbool.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_sys.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_device.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/max32690.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/core_cm4.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_version.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_compiler.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/cmsis_gcc.h \
+ C:/workspace/msdk/Libraries/CMSIS/5.9.0/Core/Include/mpu_armv7.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/system_max32690.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_errors.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/mxc_pins.h \
+ C:/workspace/msdk/Libraries/PeriphDrivers/Include/MAX32690/gpio.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/gpio_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/lpgcr_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/gcr_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/i2c_regs.h \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Include/dma_regs.h \
+ C:/workspace/msdk/Libraries/MiscDrivers/CODEC/max9867.h

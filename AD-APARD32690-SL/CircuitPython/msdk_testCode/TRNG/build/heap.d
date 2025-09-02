@@ -1,0 +1,36 @@
+C:/workspace/ADI_Intern_Private/AD-APARD32690-SL/CircuitPython/msdk_testCode/TRNG/build/heap.o: \
+ C:/workspace/msdk/Libraries/CMSIS/Device/Maxim/MAX32690/Source/heap.c \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\_default_types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\features.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\_newlib_version.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_intsup.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_stdint.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\errno.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\errno.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\reent.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\_ansi.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\newlib.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\config.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\ieeefp.h \
+ c:\workspace\msdk\tools\gnutools\10.3\lib\gcc\arm-none-eabi\10.3.1\include\stddef.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\_types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\lock.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\unistd.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\unistd.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\cdefs.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\endian.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\_endian.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\select.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_sigset.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_timeval.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\timespec.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_timespec.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\_pthreadtypes.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\sys\sched.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\types.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\malloc.h \
+ c:\workspace\msdk\tools\gnutools\10.3\arm-none-eabi\include\machine\malloc.h
