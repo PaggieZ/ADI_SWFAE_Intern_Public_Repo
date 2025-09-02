@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "string.h": "c"
+    },
+    // set default file directory
+    "terminal.integrated.cwd": "/home/pzhu2/workspace/ADI_Intern_Private/AD-APARD32690-SL/WSL_VSCode_Settings_TestCode",
+    // set vs code workspace theme
+    "workbench.colorTheme": "Default Light+"
+}
