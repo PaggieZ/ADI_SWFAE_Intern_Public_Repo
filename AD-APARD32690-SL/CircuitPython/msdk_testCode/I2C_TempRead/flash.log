@@ -1,0 +1,23 @@
+set log_output to "flash.log"
+Info : J-Link Pro V5-1 compiled Apr  1 2025 10:04:08
+Info : Hardware version: 5.10
+Info : VTarget = 1.778 V
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x2ba01477
+Info : [max32xxx.cpu] Cortex-M4 r0p1 processor detected
+Info : [max32xxx.cpu] target has 6 breakpoints, 4 watchpoints
+Info : [max32xxx.cpu] Examination succeed
+Info : starting gdb server for max32xxx.cpu on pipe
+Warn : [max32xxx.cpu] target was in unknown state when halt was requested
+[max32xxx.cpu] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x0000fff4 msp: 0x2000a900
+Info : Listening on port 6666 for tcl connections
+Info : Listening on port 4444 for telnet connections
+Info : accepting 'gdb' connection from pipe
+Warn : Prefer GDB command "target extended-remote :pipe" instead of "target remote :pipe"
+Warn : No RTOS could be auto-detected!
+[max32xxx.cpu] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x0000fff4 msp: 0x2000a900
+[max32xxx.cpu] halted due to breakpoint, current mode: Thread 
+xPSR: 0x01000000 pc: 0x0000fff4 msp: 0x2000a900
+Info : dropped 'gdb' connection
