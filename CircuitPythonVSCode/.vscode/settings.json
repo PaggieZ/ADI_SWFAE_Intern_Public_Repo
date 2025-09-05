@@ -1,0 +1,49 @@
+{
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "path": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    },
+    "WSL": {
+      "path": "C:\\WINDOWS\\System32\\wsl.exe"
+    }
+  },
+  "target":"MAX32690",
+  "board":"APARD",
+
+  "project_name":"${workspaceFolderBasename}",
+
+  "program_file":"firmware.elf",
+  "symbol_file":"firmware.elf",
+
+  "M4_OCD_interface_file":"jlink.cfg",
+  "M4_OCD_target_file":"max32690.cfg",
+  "RV_OCD_interface_file":"ftdi/olimex-arm-usb-ocd-h.cfg",
+  "RV_OCD_target_file":"${config:target}_riscv.cfg",
+
+  "v_Arm_GCC":"10.3",
+  "v_xPack_GCC":"12.2.0-3.1",
+  "MAXIM_PATH":"/home/pzhu2/MaximSDK",
+
+  "OCD_path":"${config:MAXIM_PATH}/Tools/OpenOCD",
+  "ARM_GCC_path":"${config:MAXIM_PATH}/Tools/GNUTools/${config:v_Arm_GCC}",
+  "xPack_GCC_path":"${config:MAXIM_PATH}/Tools/xPack/riscv-none-elf-gcc/${config:v_xPack_GCC}",
+  "Make_path":"${config:MAXIM_PATH}/Tools/GNUTools/Make",
+  "MSYS_path": "${config:MAXIM_PATH}/Tools/MSYS2",
+  "files.associations": {
+    "max32_port.h": "c",
+    "pwrseq_regs.h": "c",
+    "max32_spi.h": "c",
+    "string_view": "c",
+    "i2c.h": "c",
+    "trng.h": "c",
+    "rtc.h": "c",
+    "nvic_table.h": "c",
+    "mxc_device.h": "c",
+    "mperrno.h": "c",
+    "background_callback.h": "c",
+    "mpversion.h": "c",
+    "mxc_delay.h": "c",
+    "lpgcr_regs.h": "c"
+  },
+}

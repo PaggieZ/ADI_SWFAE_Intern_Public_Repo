@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Debug Arm (Cortex-debug)",
+            "cwd":"${workspaceRoot}",
+            "executable": "${workspaceFolder}/ports/analog/build-apard32690/${config:program_file}",
+            "loadFiles": ["${workspaceFolder}/ports/analog/build-apard32690/${config:program_file}"],
+            "symbolFiles": [{
+                "file": "${workspaceFolder}/ports/analog/build-apard32690/${config:symbol_file}"
+            }],
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "gdbPath": "${config:ARM_GCC_path}/bin/arm-none-eabi-gdb",
+            "serverpath": "${config:OCD_path}/openocd",
+            "searchDir": ["${config:OCD_path}/scripts"],
+            "configFiles": ["interface/${config:M4_OCD_interface_file}", "target/${config:M4_OCD_target_file}"],
+            "interface": "swd",
+            "runToEntryPoint": "main",
+            "svdFile": "${config:MAXIM_PATH}/Libraries/CMSIS/Device/Maxim/${config:target}/Include/max32690.svd",
+            "showDevDebugOutput": "raw"
+        }
+    ]
+}

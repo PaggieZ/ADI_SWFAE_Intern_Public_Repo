@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "bash",
+      // must specify -ic argument or the env variables exported in .bashrc won't load
+      "args": ["-ic"]
+    }
+  },
+  "tasks": [
+    {
+      "label": "Attach USB Device to WSL",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "\"C:\\workspace\\forward_JLink_to_WSL.bat\""
+      ],
+      "presentation": {
+        "panel": "shared",
+        "echo": true,
+        "reveal": "always",
+        "group": "splitGroup"
+      },
+    },
+    {
+      // default settings, build and flash firmware.elf
+      "label": "Execute Startup Shell Script",
+      "type": "shell",
+      "command": "../cirPy_contribute_startup.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "group": "splitGroup"
+      },
+    },
+    {
+      // make sure to first forward the port, then build and flash firmware.elf
+      "label": "Run All",
+      "dependsOn": ["Attach USB Device to WSL", "Execute Startup Shell Script"],
+      "dependsOrder": "sequence",
+    }
+  ]
+}
